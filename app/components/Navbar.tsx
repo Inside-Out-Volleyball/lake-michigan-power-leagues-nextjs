@@ -20,8 +20,8 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex justify-between items-center py-3 md:py-4">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 font-bold text-3xl text-blue-700 hover:text-blue-800 transition-colors" style={{ fontFamily: "var(--font-bebas-neue)" }}>
-            <span>Lakeshore Volleyfest</span>
+          <Link href="/" className="flex items-center gap-2 font-bold text-3xl text-red-700 hover:text-red-800 transition-colors" style={{ fontFamily: "var(--font-bebas-neue)" }}>
+            <span>Lake Michigan Power Leagues</span>
           </Link>
 
           {/* Desktop Menu */}

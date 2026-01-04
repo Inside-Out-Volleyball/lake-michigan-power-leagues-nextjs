@@ -21,8 +21,8 @@ const bebasNeue = Bebas_Neue({
 });
 
 export const metadata: Metadata = {
-  title: "Lakeshore Volleyfest",
-  description: "DeVos Place · Grand Rapids, MI · April 25 & 26, 2026",
+  title: "Lake Michigan Power Leagues",
+  description: "Michigan and NW Indiana",
 };
 
 export default function RootLayout({

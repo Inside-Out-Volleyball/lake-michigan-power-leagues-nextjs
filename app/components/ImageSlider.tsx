@@ -50,7 +50,7 @@ export default function ImageSlider() {
   }
 
   return (
-    <div className="relative w-full h-64 md:h-80 rounded-lg overflow-hidden shadow-xl group">
+    <div className="relative w-full h-full">
       {/* Slides */}
       <div className="relative w-full h-full">
         {slides.map((slide, index) => (

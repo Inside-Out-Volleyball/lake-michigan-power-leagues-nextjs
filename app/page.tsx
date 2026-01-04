@@ -1,146 +1,278 @@
 import Image from "next/image";
-import Script from "next/script";
-import JuicerInstagram from "./components/JuicerInstagram";
-import ImageSlider from "./components/ImageSlider";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import PageHeader from "./components/PageHeader";
-import { tournamentData } from "./data/tournamentData";
+import { client } from "../src/sanity/client";
 
-export default function Home() {
+// Define the Power League data type matching the Sanity schema
+interface AgeGroup {
+  ageGroup: string;
+  notes?: string;
+}
+
+interface PowerLeague {
+  title: string;
+  seasonYear?: number;
+  startDate?: string;
+  endDate?: string;
+  location?: string;
+  ageGroups?: AgeGroup[];
+  entryFee?: number;
+  entryDeadline?: string;
+  rules?: string;
+  registrationLink?: string;
+  hotelInfoLink?: string;
+}
+
+// Fetch Power League data from Sanity
+async function getPowerLeagueData(): Promise<PowerLeague[]> {
+  try {
+    const query = `*[_type == "powerLeague"] | order(startDate desc){
+      title,
+      seasonYear,
+      startDate,
+      endDate,
+      location,
+      ageGroups[]{
+        ageGroup,
+        notes
+      },
+      entryFee,
+      entryDeadline,
+      rules,
+      registrationLink,
+      hotelInfoLink
+    }`;
+    
+    const data = await client.fetch(query);
+    console.log(data);
+    return data || [];
+  } catch (error) {
+    console.error("Error fetching Power League data:", error);
+    return [];
+  }
+}
+
+// Format date for display
+function formatDate(dateString: string | undefined): string {
+  if (!dateString) return "TBA";
+  const date = new Date(dateString);
+  return date.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+// Format date range for display
+function formatDateRange(startDate: string | undefined, endDate: string | undefined): string {
+  if (!startDate || !endDate) return "";
+  
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  
+  const startMonth = start.toLocaleDateString("en-US", { month: "long" });
+  const startDay = start.getDate();
+  const endMonth = end.toLocaleDateString("en-US", { month: "long" });
+  const endDay = end.getDate();
+  const year = end.getFullYear();
+  
+  // If same month
+  if (startMonth === endMonth) {
+    return `${startMonth} ${startDay} & ${endDay}, ${year}`;
+  }
+  
+  // If different months
+  return `${startMonth} ${startDay} - ${endMonth} ${endDay}, ${year}`;
+}
+
+export default async function Home() {
+  const leagues = await getPowerLeagueData();
+
+  if (!leagues || leagues.length === 0) {
+    return (
+      <div className="min-h-screen bg-linear-to-b from-gray-50 to-white">
+        <Navbar />
+        <PageHeader
+          title="Lake Michigan Power Leagues"
+          subtitle="Loading tournament information..."
+        />
+        <main className="max-w-7xl mx-auto px-4 py-8">
+          <div className="text-center text-gray-600">
+            Tournament information is currently unavailable. Please check back later.
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-linear-to-b from-gray-50 to-white">
       <Navbar />
-      <PageHeader 
-        title="Lakeshore Volleyfest"
-        subtitle={`${tournamentData.dates} · West Michigan`}
+      <PageHeader
+        title="Lake Michigan Power Leagues"
+        subtitle="West Michigan Volleyball Tournaments"
       />
 
       <main className="max-w-7xl mx-auto px-4 py-8">
-        {/* Image Slider */}
-        <ImageSlider />
-
         {/* Navigation Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 mt-8">
-          <Card
-            title="Tournament Information"
-            link="/tournament-information"
-          />
-          <Card
-            title="Schedule"
-            link="/tournament-information#schedule"
-          />
-          <Card
-            title="Hotel Information"
-            link="https://www.teamtravelsource.com/volleyball_lander/lakeshorevolleyfest/"
-          />
+          <Card title="Schedule" link="/tournament-information#schedule" />
+          {leagues[0]?.hotelInfoLink && (
+            <Card title="Hotel Information" link={leagues[0].hotelInfoLink} />
+          )}
           <Card
             title="Tickets/Admission"
             link="https://iplexsports.com/event/dli94fTSUUPUj5ko"
           />
-          <Card
-            title="Locations"
-            link="/locations"
-          />
-          <Card
-            title="Livestream"
-            link="/livestream"
-          />
+          <Card title="Locations" link="/locations" />
         </div>
 
-        {/* Tournament Details */}
-        <div className="grid grid-cols-1 gap-8">
-          <div>
-            <div className="bg-white border-2 border-blue-200 rounded-xl shadow-xl p-8 md:p-12 mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-4 text-blue-900">
-            {tournamentData.name}
-          </h2>
-          <p className="text-2xl font-semibold text-center text-blue-700 mb-6">
-            {tournamentData.dates}
+        {/* Tournament Details - Loop through all leagues */}
+        {leagues.map((leagueData, index) => (
+          <div key={index} className="grid grid-cols-1 gap-8 mb-8">
+            <div>
+              <div className="bg-white border-2 border-red-200 rounded-xl shadow-xl p-8 md:p-12 mb-12">
+                <h2 className="text-3xl md:text-4xl font-bold text-center mb-4 text-red-900">
+                  {leagueData.title}
+                </h2>
+                {(leagueData.startDate || leagueData.endDate) && (
+                  <p className="text-2xl font-semibold text-center text-red-700 mb-6">
+                    {formatDateRange(leagueData.startDate, leagueData.endDate)}
+                  </p>
+                )}
+                <p className="text-center text-lg mb-8 text-gray-700">
+                  {leagueData.location || "Grand Rapids, MI"}
+                </p>
+
+                <div className="max-w-3xl mx-auto space-y-3 mb-10">
+                  {leagueData.entryFee && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 border-2 border-red-300 rounded-lg overflow-hidden">
+                    <div className="p-4 bg-red-50 font-bold border-r-2 border-red-300 text-red-900">
+                      ENTRY FEE:
+                    </div>
+                    <div className="p-4 bg-white text-black">
+                      ${leagueData.entryFee.toFixed(2)}
+                    </div>
+                  </div>
+                )}
+                {leagueData.entryDeadline && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 border-2 border-red-300 rounded-lg overflow-hidden">
+                    <div className="p-4 bg-red-50 font-bold border-r-2 border-red-300 text-red-900">
+                      ENTRY DEADLINE:
+                    </div>
+                    <div className="p-4 bg-white text-black">
+                      {formatDate(leagueData.entryDeadline)}
+                    </div>
+                  </div>
+                )}
+                {leagueData.registrationLink && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 border-2 border-red-300 rounded-lg overflow-hidden">
+                    <div className="p-4 bg-red-50 font-bold border-r-2 border-red-300 text-red-900">
+                      REGISTRATION:
+                    </div>
+                    <div className="p-4 bg-white text-black font-bold">
+                      <a
+                        href={leagueData.registrationLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-red-600 hover:text-red-800 hover:underline transition-colors"
+                      >
+                        Register Here
+                      </a>
+                    </div>
+                  </div>
+                )}
+                {leagueData.rules && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 border-2 border-red-300 rounded-lg overflow-hidden">
+                    <div className="p-4 bg-red-50 font-bold border-r-2 border-red-300 text-red-900">
+                      RULES:
+                    </div>
+                    <div className="p-4 bg-white text-black">
+                      {leagueData.rules}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Age Groups Cards */}
+              {leagueData.ageGroups && leagueData.ageGroups.length > 0 && (
+                <div className="mb-10">
+                  <h3 className="text-2xl font-bold text-center mb-6 text-red-900">
+                    Age Groups
+                  </h3>
+                  <div className="flex flex-wrap justify-center gap-4 max-w-5xl mx-auto">
+                    {leagueData.ageGroups.map((group, index) => (
+                      <div
+                        key={index}
+                        className="bg-gradient-to-br from-red-50 to-white border-2 border-red-300 rounded-lg p-5 shadow-md hover:shadow-lg transition-shadow"
+                      >
+                        <h4 className="text-xl font-bold text-red-900 mb-2">
+                          {group.ageGroup}
+                        </h4>
+                        {group.notes && (
+                          <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-line">
+                            {group.notes}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            </div>
+          </div>
+        ))}
+
+        {/* AAU Information - Displayed once after all leagues */}
+        <div className="max-w-4xl mx-auto space-y-4 text-base leading-relaxed text-gray-700 bg-red-50 p-6 rounded-lg mt-12">
+          <p>
+            The AAU Super Regional is a National AAU Sponsored Event.
+            Winners in each age division will have all or part of their
+            fee waived for AAU Nationals. The refund is a sliding scale
+            100%-30% based on number of teams entered in a division. 16
+            teams equals full refund, any less than 16 teams would be paid
+            on a percentage basis.
           </p>
-          <p className="text-center text-lg mb-8 text-gray-700">
-            <span className="font-semibold">Hosted by {tournamentData.hostedBy}</span><br />
-            {tournamentData.location}
+          <p>
+            Inside Out will guarantee a full entry fee to the 1st place
+            team in each Open division.
           </p>
-
-          <div className="max-w-3xl mx-auto space-y-3 mb-10">
-            <div className="grid grid-cols-1 md:grid-cols-2 border-2 border-blue-300 rounded-lg overflow-hidden">
-              <div className="p-4 bg-blue-50 font-bold border-r-2 border-blue-300 text-blue-900">AGE GROUPS:</div>
-              <div className="p-4 bg-white text-black">{tournamentData.ageGroups}</div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 border-2 border-blue-300 rounded-lg overflow-hidden">
-              <div className="p-4 bg-blue-50 font-bold border-r-2 border-blue-300 text-blue-900">ENTRY FEE:</div>
-              <div className="p-4 bg-white text-black">{tournamentData.entryFees.older.cost} ({tournamentData.entryFees.older.age}) {tournamentData.entryFees.younger.cost} ({tournamentData.entryFees.younger.age})</div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 border-2 border-blue-300 rounded-lg overflow-hidden">
-              <div className="p-4 bg-blue-50 font-bold border-r-2 border-blue-300 text-blue-900">ENTRY DEADLINE:</div>
-              <div className="p-4 bg-white text-black">{tournamentData.entryDeadline}</div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 border-2 border-blue-300 rounded-lg overflow-hidden">
-              <div className="p-4 bg-blue-50 font-bold border-r-2 border-blue-300 text-blue-900">REGISTRATION:</div>
-              <div className="p-4 bg-white text-black font-bold"><a href={tournamentData.registrationUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 hover:underline transition-colors">{tournamentData.registrationDisplay}</a></div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 border-2 border-blue-300 rounded-lg overflow-hidden">
-              <div className="p-4 bg-blue-50 font-bold border-r-2 border-blue-300 text-blue-900">RULES:</div>
-              <div className="p-4 bg-white text-black">{tournamentData.rules}</div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 border-2 border-blue-300 rounded-lg overflow-hidden">
-              <div className="p-4 bg-blue-50 font-bold border-r-2 border-blue-300 text-blue-900">ENTRY FEES PAYABLE TO:</div>
-              <div className="p-4 bg-white text-black">{tournamentData.entryFeesPayableTo}</div>
-            </div>
-          </div>
-
-          <div className="max-w-4xl mx-auto space-y-4 text-base leading-relaxed text-gray-700 bg-blue-50 p-6 rounded-lg">
-            <p>
-              The AAU Super Regional is a National AAU Sponsored Event. Winners in each age
-              division will have all or part of their fee waived for AAU Nationals. The refund is a sliding scale 100%-30% based
-              on number of teams entered in a division. 16 teams equals full refund, any less than 16 teams would be paid on a
-              percentage basis.
-            </p>
-            <p>
-              Inside Out will guarantee a full entry fee to the 1st place team in each Open division.
-            </p>
-            <ul className="list-disc list-inside space-y-2">
-              <li>This event is sanctioned by the Amateur Athletic Union of the U. S., Inc.</li>
-              <li>All participants must have a current AAU membership.</li>
-              <li>AAU membership may not be included as part of the entry fee to the event.</li>
-            </ul>
-          </div>
-
-          {/* AAU Logos */}
-          <div className="flex flex-col md:flex-row justify-center items-center gap-8 mt-10 pt-8 border-t border-blue-200">
-            <div className="relative w-80 h-40">
-              <Image
-                src="/aau_logo.png"
-                alt="AAU Logo"
-                fill
-                className="object-contain"
-              />
-            </div>
-            <div className="relative w-80 h-40">
-              <Image
-                src="/aauvball_logo.png"
-                alt="AAU Volleyball Logo"
-                fill
-                className="object-contain"
-              />
-            </div>
-          </div>
-        </div>
+          <ul className="list-disc list-inside space-y-2">
+            <li>
+              This event is sanctioned by the Amateur Athletic Union of
+              the U. S., Inc.
+            </li>
+            <li>All participants must have a current AAU membership.</li>
+            <li>
+              AAU membership may not be included as part of the entry fee
+              to the event.
+            </li>
+          </ul>
         </div>
 
-        </div>
-
-        {/* Instagram Embed - Below main content */}
-        <section className="mt-12">
-          <div className="bg-white border-2 border-blue-200 rounded-xl shadow-xl p-4">
-            <JuicerInstagram />
+        {/* AAU Logos */}
+        <div className="flex flex-col md:flex-row justify-center items-center gap-8 mt-10 mb-12 pt-8 border-t border-red-200">
+          <div className="relative w-80 h-40">
+            <Image
+              src="/aau_logo.png"
+              alt="AAU Logo"
+              fill
+              className="object-contain"
+            />
           </div>
-        </section>
+          <div className="relative w-80 h-40">
+            <Image
+              src="/aauvball_logo.png"
+              alt="AAU Volleyball Logo"
+              fill
+              className="object-contain"
+            />
+          </div>
+        </div>
       </main>
-
-      <Script async src="//www.instagram.com/embed.js" />
-
       <Footer />
     </div>
   );
@@ -152,17 +284,29 @@ function Card({ title, link }: { title: string; link: string }) {
       href={link}
       className="relative block bg-white border border-gray-200 rounded-xl p-8 shadow-md hover:shadow-2xl hover:scale-105 transition-all duration-300 text-center group overflow-hidden"
     >
-      <div className="absolute inset-0 bg-linear-to-br from-blue-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+      <div className="absolute inset-0 bg-linear-to-br from-red-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
       <div className="relative z-10">
-        <div className="w-16 h-16 mx-auto mb-4 bg-blue-100 rounded-full flex items-center justify-center group-hover:bg-blue-600 transition-colors duration-300">
-          <svg className="w-8 h-8 text-blue-600 group-hover:text-white transition-colors duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+        <div className="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center group-hover:bg-red-600 transition-colors duration-300">
+          <svg
+            className="w-8 h-8 text-red-600 group-hover:text-white transition-colors duration-300"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 5l7 7-7 7"
+            />
           </svg>
         </div>
-        <h2 className="text-xl font-bold text-gray-900 group-hover:text-blue-700 mb-3 transition-colors duration-300">
+        <h2 className="text-xl font-bold text-gray-900 group-hover:text-red-700 mb-3 transition-colors duration-300">
           {title}
         </h2>
-        <span className="text-blue-600 font-semibold group-hover:underline">Read more »</span>
+        <span className="text-red-600 font-semibold group-hover:underline">
+          Read more »
+        </span>
       </div>
     </a>
   );
