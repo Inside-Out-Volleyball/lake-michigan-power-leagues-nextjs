@@ -32,7 +32,7 @@ export default function PageHeader({ title, subtitle }: PageHeaderProps) {
         </div>
 
         <div className="mx-auto max-w-3xl backdrop-blur-sm bg-white/10 border border-white/20 rounded-2xl px-6 py-4 md:px-8 md:py-5 shadow-lg">
-          <h1 className="text-4xl md:text-5xl font-bold tracking-wider mb-2" style={{ fontFamily: "var(--font-bebas-neue)" }}>{title}</h1>
+          <h1 className="text-4xl md:text-5xl font-bold tracking-wider mb-2" style={{ fontFamily: "var(--font-anton)" }}>{title}</h1>
           <p className="text-base md:text-lg font-medium text-white/90">{subtitle}</p>
         </div>
       </div>
