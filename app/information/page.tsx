@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Navbar from "@/app/components/Navbar";
 import Footer from "@/app/components/Footer";
 import PageHeader from "@/app/components/PageHeader";
+import WaveDivider from "@/app/components/WaveDivider";
 import { previousWinners } from "@/app/data/previousWinners";
 
 type Section = 'rulebook' | 'aau' | 'facility-rules' | 'inclement-weather' | 'previous-winners';
@@ -26,6 +27,7 @@ export default function InformationPage() {
         title="Rules and Info"
         subtitle="League info, rules, and policies"
       />
+      <WaveDivider />
 
       <main className="max-w-6xl mx-auto px-4 py-10">
         <div className="flex flex-col md:flex-row gap-8">

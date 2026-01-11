@@ -9,7 +9,7 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        'bebas-neue': ['var(--font-bebas-neue)'],
+        'anton': ['var(--font-anton)'],
         'geist-sans': ['var(--font-geist-sans)'],
         'geist-mono': ['var(--font-geist-mono)'],
       },

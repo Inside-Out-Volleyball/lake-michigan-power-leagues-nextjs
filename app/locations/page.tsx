@@ -3,6 +3,7 @@ import Navbar from "@/app/components/Navbar";
 import Footer from "@/app/components/Footer";
 import PageHeader from "@/app/components/PageHeader";
 import { locations } from "@/app/data/locations";
+import WaveDivider from "../components/WaveDivider";
 
 export default function LocationsPage() {
   const makeMapUrl = (addressLines: string[]) =>
@@ -15,6 +16,8 @@ export default function LocationsPage() {
         title="Locations"
         subtitle="Playing venues, addresses, and seating info"
       />
+
+      <WaveDivider />
 
       <main className="max-w-6xl mx-auto px-4 py-10">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
