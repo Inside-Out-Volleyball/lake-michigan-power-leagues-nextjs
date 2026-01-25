@@ -42,7 +42,7 @@ interface Motd {
 const getPowerLeagueData = unstable_cache(
   async (): Promise<PowerLeague[]> => {
     try {
-      const query = `*[_type == "powerLeague"] | order(startDate desc){
+      const query = `*[_type == "powerLeague"] | order(startDate asc){
         title,
         shortName,
         seasonYear,
